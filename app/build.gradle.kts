@@ -7,6 +7,12 @@ android {
     namespace = "com.ai.assistance.operit.provider"
     compileSdk = 34
 
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    val keystoreProperties = java.util.Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
+    }
+
     defaultConfig {
         applicationId = "com.ai.assistance.operit.provider"
         minSdk = 26
@@ -17,6 +23,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties.getProperty("RELEASE_KEY_ALIAS")
+            keyPassword = keystoreProperties.getProperty("RELEASE_KEY_PASSWORD")
+            storeFile = file(keystoreProperties.getProperty("RELEASE_STORE_FILE") ?: "")
+            storePassword = keystoreProperties.getProperty("RELEASE_STORE_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -24,7 +39,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
+
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
