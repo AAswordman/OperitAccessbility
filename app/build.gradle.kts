@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -7,10 +9,12 @@ android {
     namespace = "com.ai.assistance.operit.provider"
     compileSdk = 34
 
+    val keystoreProperties = Properties()
     val keystorePropertiesFile = rootProject.file("keystore.properties")
-    val keystoreProperties = java.util.Properties()
     if (keystorePropertiesFile.exists()) {
-        keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
+        keystorePropertiesFile.reader(Charsets.UTF_8).use { reader ->
+            keystoreProperties.load(reader)
+        }
     }
 
     defaultConfig {
