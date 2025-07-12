@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Accessibility Provider</string>
+    <string name="accessibility_service_description">此服务为AI助手提供UI自动化能力。</string>
+    <string name="main_activity_description">这是一个无障碍服务提供者应用。它在后台运行以支持主应用。您可以从系统设置中管理或卸载它。</string>
+</resources>
