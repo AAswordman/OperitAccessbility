@@ -4,6 +4,7 @@
     package="com.ai.assistance.operit.provider">
 
     <application
+        android:name=".MyApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -11,7 +12,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat.Light"
+        android:theme="@style/Theme.OperitAccessibilitySupport"
         tools:targetApi="31">
 
         <activity
@@ -25,7 +26,7 @@
 
         <service
             android:name=".UIAccessibilityService"
-            android:label="@string/app_name"
+            android:label="@string/accessibility_service_label"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>
@@ -40,7 +41,7 @@
             android:name=".RemoteBinderService"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.ai.assistance.operit.provider.ACTION_BIND_ACCESSIBILITY_PROVIDER" />
+                <action android:name="com.ai.assistance.operit.provider.IAccessibilityProvider" />
             </intent-filter>
         </service>
 

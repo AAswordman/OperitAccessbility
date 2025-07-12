@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">Accessibility Provider</string>
+    <string name="app_name">Accessibility Operit Support</string>
+    <string name="accessibility_service_label">AI助手接口服务</string>
     <string name="accessibility_service_description">此服务为AI助手提供UI自动化能力。</string>
-    <string name="main_activity_description">这是一个无障碍服务提供者应用。它在后台运行以支持主应用。您可以从系统设置中管理或卸载它。</string>
+    <string name="main_activity_description">为了使AI助手能够正常工作，请确保“AI助手接口服务”在系统的无障碍设置中已开启。开启后，本应用无需保持在后台运行。</string>
 </resources>

@@ -16,24 +16,44 @@ import android.util.Xml
 
 class UIAccessibilityService : AccessibilityService() {
 
-    companion object {
-        private const val TAG = "UIAccessibilityService"
-        private var instance: UIAccessibilityService? = null
-        var service: UIAccessibilityService? = null
-            private set
-    }
-
-    internal val binder = object : IAccessibilityProvider.Stub() {
+    private val accessibilityBinder = object : IAccessibilityProvider.Stub() {
         override fun getUiHierarchy(): String {
             return this@UIAccessibilityService.captureUiHierarchyAsXml()
         }
 
         override fun performClick(x: Int, y: Int): Boolean {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
-            val path = Path().apply { moveTo(x.toFloat(), y.toFloat()) }
-            val stroke = GestureDescription.StrokeDescription(path, 0, 100)
-            val gesture = GestureDescription.Builder().addStroke(stroke).build()
-            return dispatchGesture(gesture, null, null)
+            Log.d(TAG, "准备在 ($x, $y) 执行点击...")
+
+            // 1. 创建一个描述点击路径的Path对象
+            // 明确地创建一个长度为0的线段，以确保路径的有效性
+            val clickPath = android.graphics.Path().apply {
+                moveTo(x.toFloat(), y.toFloat())
+                lineTo(x.toFloat(), y.toFloat())
+            }
+
+            // 2. 用Path创建一个手势“笔划”
+            // 点击的持续时间需要一个合理的值，不能太短，例如50毫秒
+            val clickStroke = GestureDescription.StrokeDescription(clickPath, 0L, 50L)
+
+            // 3. 用“笔划”构建完整的手势描述
+            val gestureDescription = GestureDescription.Builder()
+                .addStroke(clickStroke)
+                .build()
+
+            // 4. 分发手势，并直接返回dispatchGesture的结果
+            // 这个布尔值表示系统是否成功接收了我们的手势请求
+            return this@UIAccessibilityService.dispatchGesture(gestureDescription, object : AccessibilityService.GestureResultCallback() {
+                // 这个回调是异步的，主应用无法直接得到它的结果，但对你调试非常重要
+                override fun onCompleted(gestureDescription: GestureDescription?) {
+                    super.onCompleted(gestureDescription)
+                    Log.i(TAG, "手势已成功完成。")
+                }
+
+                override fun onCancelled(gestureDescription: GestureDescription?) {
+                    super.onCancelled(gestureDescription)
+                    Log.w(TAG, "手势被取消。")
+                }
+            }, null)
         }
 
         override fun performGlobalAction(actionId: Int): Boolean {
@@ -79,26 +99,39 @@ class UIAccessibilityService : AccessibilityService() {
         }
 
         override fun isAccessibilityServiceEnabled(): Boolean {
-            return instance != null
+            return isServiceConnected
         }
+    }
+
+
+    companion object {
+        private const val TAG = "UIAccessibilityService"
+        var isServiceConnected = false
+            private set
+        var binder: IAccessibilityProvider.Stub? = null
+            private set
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        instance = this
-        service = this
-        Log.d(TAG, "无障碍服务提供者已连接")
+        isServiceConnected = true
+        binder = this.accessibilityBinder
+        Log.d(TAG, "服务已连接，状态更新为 true")
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        instance = null
-        service = null
-        Log.d(TAG, "无障碍服务提供者已解绑")
+        isServiceConnected = false
+        binder = null
+        Log.d(TAG, "服务已解绑，状态更新为 false")
         return super.onUnbind(intent)
     }
     
     override fun onAccessibilityEvent(event: AccessibilityEvent?) { }
-    override fun onInterrupt() { }
+    override fun onInterrupt() {
+        isServiceConnected = false
+        binder = null
+        Log.d(TAG, "服务已中断，状态更新为 false")
+    }
 
     private fun findNodeByBounds(root: AccessibilityNodeInfo, boundsString: String): AccessibilityNodeInfo? {
         val rect = android.graphics.Rect()

@@ -7,6 +7,6 @@ import android.os.IBinder
 class RemoteBinderService : Service() {
 
     override fun onBind(intent: Intent): IBinder? {
-        return UIAccessibilityService.service?.binder
+        return UIAccessibilityService.binder
     }
 } 
