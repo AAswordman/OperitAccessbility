@@ -83,19 +83,47 @@ class UIAccessibilityService : AccessibilityService() {
         }
 
         override fun setTextOnNode(nodeId: String, text: String): Boolean {
-            val rootNode = rootInActiveWindow ?: return false
-            val targetNode = findNodeByBounds(rootNode, nodeId)
+            Log.d(TAG, "准备为节点 $nodeId 设置文本: '$text'")
+            val rootNode = rootInActiveWindow
+            if (rootNode == null) {
+                Log.w(TAG, "setTextOnNode 失败: rootInActiveWindow is null")
+                return false
+            }
+
+            val containerNode = findNodeByBounds(rootNode, nodeId)
             rootNode.recycle()
 
-            if (targetNode != null) {
+            if (containerNode == null) {
+                Log.w(TAG, "setTextOnNode 失败: 无法通过ID '$nodeId' 找到目标容器节点")
+                return false
+            }
+
+            var targetNode: AccessibilityNodeInfo? = null
+            try {
+                // 在容器（或其本身）中寻找第一个可编辑的节点
+                targetNode = findFirstEditableNode(containerNode)
+
+                if (targetNode == null) {
+                    Log.w(TAG, "setTextOnNode 失败: 在节点 $nodeId 及其子节点中未找到可编辑的节点。")
+                    return false
+                }
+
+                // 在找到的可编辑节点上执行操作
                 val arguments = Bundle().apply {
                     putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
                 }
                 val result = targetNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
-                targetNode.recycle()
+
+                if (!result) {
+                    val bounds = android.graphics.Rect()
+                    targetNode.getBoundsInScreen(bounds)
+                    Log.w(TAG, "setTextOnNode: performAction(ACTION_SET_TEXT) 在目标节点上返回 false. 节点信息: class=${targetNode.className}, text='${targetNode.text}', bounds=${bounds.toShortString()}")
+                }
                 return result
+            } finally {
+                containerNode.recycle()
+                targetNode?.recycle()
             }
-            return false
         }
 
         override fun isAccessibilityServiceEnabled(): Boolean {
@@ -143,8 +171,26 @@ class UIAccessibilityService : AccessibilityService() {
             val child = root.getChild(i)
             if (child != null) {
                 val found = findNodeByBounds(child, boundsString)
+                child.recycle() // 立即回收，避免泄漏
                 if (found != null) {
                     return found
+                }
+            }
+        }
+        return null
+    }
+
+    private fun findFirstEditableNode(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        if (node.isEditable) {
+            return AccessibilityNodeInfo.obtain(node)
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i)
+            if (child != null) {
+                val editableNode = findFirstEditableNode(child)
+                child.recycle() // 立即回收，避免泄漏
+                if (editableNode != null) {
+                    return editableNode
                 }
             }
         }
