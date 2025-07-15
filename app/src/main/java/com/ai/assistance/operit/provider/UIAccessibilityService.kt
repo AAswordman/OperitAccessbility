@@ -211,7 +211,7 @@ class UIAccessibilityService : AccessibilityService() {
             Log.e(TAG, "生成UI XML时出错", e)
             return ""
         } finally {
-            rootNode.recycle()
+            // serializeNodeToXml 已经递归回收了包括 rootNode 在内的所有节点，这里无需再次回收
         }
     }
 
