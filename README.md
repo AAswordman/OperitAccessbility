@@ -27,6 +27,11 @@
 # 构建-正式版本：
 ./gradlew assembleRelease
 
+# 安装-调试版本
+./gradlew installDebug
+
+# 安装-正式版本
+./gradlew installRelease
 ```
 
 ## 配置说明
