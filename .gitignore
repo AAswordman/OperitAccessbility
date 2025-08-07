@@ -17,3 +17,4 @@ local.properties
 # Sensitive info
 local.properties
 keystore.properties
+*.jks
