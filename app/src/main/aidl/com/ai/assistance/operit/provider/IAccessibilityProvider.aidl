@@ -8,4 +8,5 @@ interface IAccessibilityProvider {
     String findFocusedNodeId();
     boolean setTextOnNode(String nodeId, String text);
     boolean isAccessibilityServiceEnabled();
+    String getCurrentActivityName();
 } 

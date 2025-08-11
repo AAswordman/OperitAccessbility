@@ -31,11 +31,11 @@ class UIAccessibilityService : AccessibilityService() {
                 lineTo(x.toFloat(), y.toFloat())
             }
 
-            // 2. 用Path创建一个手势“笔划”
+            // 2. 用Path创建一个手势"笔划"
             // 点击的持续时间需要一个合理的值，不能太短，例如50毫秒
             val clickStroke = GestureDescription.StrokeDescription(clickPath, 0L, 50L)
 
-            // 3. 用“笔划”构建完整的手势描述
+            // 3. 用"笔划"构建完整的手势描述
             val gestureDescription = GestureDescription.Builder()
                 .addStroke(clickStroke)
                 .build()
@@ -129,6 +129,10 @@ class UIAccessibilityService : AccessibilityService() {
         override fun isAccessibilityServiceEnabled(): Boolean {
             return isServiceConnected
         }
+
+        override fun getCurrentActivityName(): String {
+            return currentActivityName
+        }
     }
 
 
@@ -138,6 +142,15 @@ class UIAccessibilityService : AccessibilityService() {
             private set
         var binder: IAccessibilityProvider.Stub? = null
             private set
+        
+        // Cache for the current activity name
+        var currentActivityName: String = ""
+            private set
+            
+        // Internal method to update the activity name from the service
+        internal fun updateCurrentActivityName(activityName: String) {
+            currentActivityName = activityName
+        }
     }
 
     override fun onServiceConnected() {
@@ -150,14 +163,28 @@ class UIAccessibilityService : AccessibilityService() {
     override fun onUnbind(intent: Intent?): Boolean {
         isServiceConnected = false
         binder = null
+        currentActivityName = ""
         Log.d(TAG, "服务已解绑，状态更新为 false")
         return super.onUnbind(intent)
     }
     
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) { }
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (event == null) return
+        
+        // Listen for window state changes to detect activity changes
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            val className = event.className?.toString()
+            if (!className.isNullOrEmpty()) {
+                updateCurrentActivityName(className)
+                Log.d(TAG, "Activity changed to: $className")
+            }
+        }
+    }
+    
     override fun onInterrupt() {
         isServiceConnected = false
         binder = null
+        currentActivityName = ""
         Log.d(TAG, "服务已中断，状态更新为 false")
     }
 

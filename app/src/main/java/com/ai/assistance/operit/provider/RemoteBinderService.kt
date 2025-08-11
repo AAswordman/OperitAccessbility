@@ -63,6 +63,14 @@ class RemoteBinderService : Service() {
             override fun isAccessibilityServiceEnabled(): Boolean {
                 return UIAccessibilityService.isServiceConnected
             }
+
+            override fun getCurrentActivityName(): String {
+                if (!UIAccessibilityService.isServiceConnected) {
+                    Log.w("RemoteBinderService", "getCurrentActivityName: Accessibility Service not connected.")
+                    return ""
+                }
+                return UIAccessibilityService.binder?.getCurrentActivityName() ?: ""
+            }
         }
     }
 
