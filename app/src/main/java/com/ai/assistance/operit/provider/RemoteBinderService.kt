@@ -69,7 +69,7 @@ class RemoteBinderService : Service() {
                     Log.w("RemoteBinderService", "getCurrentActivityName: Accessibility Service not connected.")
                     return ""
                 }
-                return UIAccessibilityService.binder?.getCurrentActivityName() ?: ""
+                return UIAccessibilityService.currentActivityName
             }
         }
     }

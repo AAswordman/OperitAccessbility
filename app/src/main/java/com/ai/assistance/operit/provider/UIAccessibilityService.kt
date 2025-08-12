@@ -144,13 +144,9 @@ class UIAccessibilityService : AccessibilityService() {
             private set
         
         // Cache for the current activity name
+        @Volatile
         var currentActivityName: String = ""
-            private set
-            
-        // Internal method to update the activity name from the service
-        internal fun updateCurrentActivityName(activityName: String) {
-            currentActivityName = activityName
-        }
+            internal set
     }
 
     override fun onServiceConnected() {
@@ -175,7 +171,7 @@ class UIAccessibilityService : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val className = event.className?.toString()
             if (!className.isNullOrEmpty()) {
-                updateCurrentActivityName(className)
+                currentActivityName = className
                 Log.d(TAG, "Activity changed to: $className")
             }
         }
