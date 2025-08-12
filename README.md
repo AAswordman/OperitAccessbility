@@ -32,6 +32,9 @@
 
 # 安装-正式版本
 ./gradlew installRelease
+
+# 运行测试
+./gradlew test
 ```
 
 ## 配置说明
