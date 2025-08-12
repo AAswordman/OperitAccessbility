@@ -38,7 +38,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // 启用 R8 代码优化
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -59,6 +60,11 @@ android {
     }
     buildFeatures {
         aidl = true
+        compose = true
+    }
+    composeOptions {
+        // 选择与 Kotlin 1.9.0 兼容的版本
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 }
 
@@ -67,6 +73,10 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.compose.bom)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
