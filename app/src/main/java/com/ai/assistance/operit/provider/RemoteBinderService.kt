@@ -28,6 +28,14 @@ class RemoteBinderService : Service() {
                 return UIAccessibilityService.binder?.performClick(x, y) ?: false
             }
 
+            override fun performLongPress(x: Int, y: Int): Boolean {
+                if (!UIAccessibilityService.isServiceConnected) {
+                    Log.w("RemoteBinderService", "performLongPress: Accessibility Service not connected.")
+                    return false
+                }
+                return UIAccessibilityService.binder?.performLongPress(x, y) ?: false
+            }
+
             override fun performGlobalAction(actionId: Int): Boolean {
                 if (!UIAccessibilityService.isServiceConnected) {
                     Log.w("RemoteBinderService", "performGlobalAction: Accessibility Service not connected.")

@@ -56,6 +56,33 @@ class UIAccessibilityService : AccessibilityService() {
             }, null)
         }
 
+        override fun performLongPress(x: Int, y: Int): Boolean {
+            Log.d(TAG, "准备在 ($x, $y) 执行长按...")
+
+            val longPressPath = android.graphics.Path().apply {
+                moveTo(x.toFloat(), y.toFloat())
+                lineTo(x.toFloat(), y.toFloat())
+            }
+
+            val longPressStroke = GestureDescription.StrokeDescription(longPressPath, 0L, 600L)
+
+            val gestureDescription = GestureDescription.Builder()
+                .addStroke(longPressStroke)
+                .build()
+
+            return this@UIAccessibilityService.dispatchGesture(gestureDescription, object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) {
+                    super.onCompleted(gestureDescription)
+                    Log.i(TAG, "长按手势已成功完成。")
+                }
+
+                override fun onCancelled(gestureDescription: GestureDescription?) {
+                    super.onCancelled(gestureDescription)
+                    Log.w(TAG, "长按手势被取消。")
+                }
+            }, null)
+        }
+
         override fun performGlobalAction(actionId: Int): Boolean {
             return this@UIAccessibilityService.performGlobalAction(actionId)
         }
