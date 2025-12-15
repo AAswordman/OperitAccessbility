@@ -3,18 +3,26 @@ package com.ai.assistance.operit.provider
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Path
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.view.Display
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import org.xmlpull.v1.XmlSerializer
+import java.io.File
 import java.io.StringWriter
+import java.util.concurrent.CountDownLatch
 import android.util.Xml
 
 class UIAccessibilityService : AccessibilityService() {
+
+    private val screenshotLock = Any()
+    private var lastScreenshotTimestamp: Long = 0L
+    private val minScreenshotIntervalMs: Long = 1100L
 
     private val accessibilityBinder = object : IAccessibilityProvider.Stub() {
         override fun getUiHierarchy(): String {
@@ -151,6 +159,74 @@ class UIAccessibilityService : AccessibilityService() {
                 containerNode.recycle()
                 targetNode?.recycle()
             }
+        }
+
+        override fun takeScreenshot(path: String, format: String): Boolean {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                return false
+            }
+            var resultValue = false
+            val normalizedFormat = format.lowercase()
+            synchronized(screenshotLock) {
+                val now = System.currentTimeMillis()
+                val elapsed = now - lastScreenshotTimestamp
+                if (elapsed in 0 until minScreenshotIntervalMs) {
+                    try {
+                        Thread.sleep(minScreenshotIntervalMs - elapsed)
+                    } catch (_: InterruptedException) {
+                    }
+                }
+                lastScreenshotTimestamp = System.currentTimeMillis()
+                val latch = CountDownLatch(1)
+                this@UIAccessibilityService.takeScreenshot(
+                    Display.DEFAULT_DISPLAY,
+                    this@UIAccessibilityService.mainExecutor,
+                    object : AccessibilityService.TakeScreenshotCallback {
+                        override fun onSuccess(screenshotResult: AccessibilityService.ScreenshotResult) {
+                            val hardwareBuffer = screenshotResult.hardwareBuffer
+                            val colorSpace = screenshotResult.colorSpace
+                            val bitmap = Bitmap.wrapHardwareBuffer(hardwareBuffer, colorSpace)
+                            hardwareBuffer.close()
+                            if (bitmap != null) {
+                                try {
+                                    val file = File(path)
+                                    val parent = file.parentFile
+                                    if (parent != null && !parent.exists()) {
+                                        parent.mkdirs()
+                                    }
+                                    val compressFormat = when (normalizedFormat) {
+                                        "png" -> Bitmap.CompressFormat.PNG
+                                        "jpg", "jpeg" -> Bitmap.CompressFormat.JPEG
+                                        else -> Bitmap.CompressFormat.PNG
+                                    }
+                                    file.outputStream().use { output ->
+                                        val quality = if (compressFormat == Bitmap.CompressFormat.JPEG) 90 else 100
+                                        resultValue = bitmap.compress(compressFormat, quality, output)
+                                    }
+                                } catch (_: Exception) {
+                                    resultValue = false
+                                } finally {
+                                    bitmap.recycle()
+                                }
+                            } else {
+                                resultValue = false
+                            }
+                            latch.countDown()
+                        }
+
+                        override fun onFailure(errorCode: Int) {
+                            resultValue = false
+                            latch.countDown()
+                        }
+                    }
+                )
+                try {
+                    latch.await()
+                } catch (_: InterruptedException) {
+                    resultValue = false
+                }
+            }
+            return resultValue
         }
 
         override fun isAccessibilityServiceEnabled(): Boolean {

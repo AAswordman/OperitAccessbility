@@ -68,6 +68,14 @@ class RemoteBinderService : Service() {
                 return UIAccessibilityService.binder?.setTextOnNode(nodeId, text) ?: false
             }
 
+            override fun takeScreenshot(path: String, format: String): Boolean {
+                if (!UIAccessibilityService.isServiceConnected) {
+                    Log.w("RemoteBinderService", "takeScreenshot: Accessibility Service not connected.")
+                    return false
+                }
+                return UIAccessibilityService.binder?.takeScreenshot(path, format) ?: false
+            }
+
             override fun isAccessibilityServiceEnabled(): Boolean {
                 return UIAccessibilityService.isServiceConnected
             }
